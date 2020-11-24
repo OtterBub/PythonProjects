@@ -1,0 +1,11 @@
+# For Security
+*.txt
+*.csv
+*.apk
+*.zip
+
+# Pyinstaller Result
+*.spec
+*.exe
+build/
+dist/
