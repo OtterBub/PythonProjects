@@ -23,9 +23,9 @@ getModelReg = re.compile(r"model]:\s\[([\S]*)\]")
 getOSVersionReg = re.compile(r"version.release]:\s\[([\S]*)\]")
 getPhoneNumReg = re.compile(r"8?[2|0]0?1[8|7|0|1][\d]*")
 
-#Test
+#GLOBAL
+gPrintResult = ""
 
-#Global
 
 class device:
     def __init__(self):
@@ -40,6 +40,10 @@ class device:
         self.th = threading.Thread()
 
         self.printStatus = "None"
+
+    def getInfoStr(self) -> str:
+        return self.printStatus
+
 
 class thrList:
     def __init__(self):
@@ -66,11 +70,15 @@ def getDeviceInfo(origDict:dict() = None):
 
     if origDict:
         resultDict = origDict
+
+    for i in resultDict:
+        d:device = resultDict.get(i)
+        d.connect = False
     
     getCmdResult = subprocess.check_output('%s devices' %(ADB), text=True)
     getDevices = getCmdResult.splitlines()
 
-    print("----Current Connected Device List Status----")
+    #print("----Current Connected Device List Status----")
     
     # Devices List Get
     for reSplit in getDevices:
@@ -85,15 +93,16 @@ def getDeviceInfo(origDict:dict() = None):
 
                 if resultDict.get(udid):
                     tempd:device = resultDict.get(udid)
+                    tempd.connect = True
                     status = tempd.installStatus
                     if status is COMPLITE:
-                        print("[%s] %s (MDN:%s) is COMPLITE" %(tempd.udid, tempd.modelName, tempd.phoneNum))
+                        #print("[%s] %s (MDN:%s) is COMPLITE" %(tempd.udid, tempd.modelName, tempd.phoneNum))
                         continue
                     elif status is IDLE:
-                        print("[%s] %s (MDN:%s) is IDLE" %(tempd.udid, tempd.modelName, tempd.phoneNum))
+                        #print("[%s] %s (MDN:%s) is IDLE" %(tempd.udid, tempd.modelName, tempd.phoneNum))
                         continue
                     elif status is INSTALLING:
-                        print("[%s] %s (MDN:%s) is INSTALLING" %(tempd.udid, tempd.modelName, tempd.phoneNum))
+                        #print("[%s] %s (MDN:%s) is INSTALLING" %(tempd.udid, tempd.modelName, tempd.phoneNum))
                         continue
 
                 #android getprop
@@ -126,7 +135,7 @@ def getDeviceInfo(origDict:dict() = None):
                         if phoneNum:
                             break
                         if iphonesubinfo >= 30:
-                            print("PhoneNum not Found")
+                            #print("PhoneNum not Found")
                             break
                 except subprocess.CalledProcessError:
                     print("[%s] shell call iphonesubinfo Command Failed" %(udid))
@@ -136,6 +145,7 @@ def getDeviceInfo(origDict:dict() = None):
                 
                 d = device()
                 d.udid = udid
+                d.connect = True
                 if phoneNum:
                     d.phoneNum = phoneNum.group()
                 if modelName:
@@ -147,6 +157,27 @@ def getDeviceInfo(origDict:dict() = None):
 
     return resultDict
 
+def update(d:device = None):
+    
+    d.printStatus = ""
+
+    if(d.connect):
+        d.printStatus += "CONNECT\n"
+
+    d.printStatus += "[%s] modelName: %s (Android %s) / MDN: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
+    d.printStatus += "\n- status: "
+    if d.installStatus is IDLE:
+        d.printStatus += "IDLE"
+    elif d.installStatus is INSTALLING:
+        d.printStatus += "INSTALLING"
+    elif d.installStatus is COMPLITE:
+        d.printStatus += "COMPLITE"
+
+    d.printStatus += "\n\n"
+
+    return d.printStatus
+
+
 def apkInstall(d:device = None, path:str = None):
     if (not d) or (not path):
         return False
@@ -155,16 +186,16 @@ def apkInstall(d:device = None, path:str = None):
         return False
 
     if (d.installed is True) or (d.installStatus is COMPLITE):
-        print("[%s / %s] already COMPLITE" %(d.udid, d.modelName))
+        #print("[%s / %s] already COMPLITE" %(d.udid, d.modelName))
         return False
     elif d.installStatus is INSTALLING:
-        print("[%s / %s] Current Installing" %(d.udid, d.modelName))
+        #print("[%s / %s] Current Installing" %(d.udid, d.modelName))
         return False
 
     try:
         d.installStatus = INSTALLING
         subprocess.check_output('%s -s %s install -d -r "%s"' %(ADB, d.udid, path))
-        print("[%s / %s] Install Success" %(d.udid, d.modelName))
+        #print("[%s / %s] Install Success" %(d.udid, d.modelName))
     except subprocess.CalledProcessError:
         d.installStatus = IDLE
         return False
@@ -193,28 +224,33 @@ if __name__ == "__main__":
 
     # Main
     while select:
+        # print init
+        gPrintResult = ""
+        gPrintResult += "----------- AUTO INSTALL [%s] ----------\n\n" %appName
         devicesDict.update(getDeviceInfo(devicesDict))
-        print("")
-        print("----Installed Devices History Status----")
+        #print("")
+        #print("----Installed Devices History Status----")
 
+        # Install APK
         for i in devicesDict:
             d:device = devicesDict.get(i)
-            print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.installStatus))
-            
+            #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.installStatus))
+            gPrintResult += update(d)
+
             if d.installStatus is COMPLITE:
-                print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
-                print("")
+                #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
+                #print("")
                 continue
 
             if d.th:
                 if d.installStatus is INSTALLING:
-                    print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
-                    print("")
+                    #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
+                    #print("")
                     continue
 
                 if d.th.is_alive():
-                    print("[%s / %s] d.th.is_alive() is True" %(d.udid, d.modelName))
-                    print("")
+                    #print("[%s / %s] d.th.is_alive() is True" %(d.udid, d.modelName))
+                    #print("")
                     continue
                 else:
                     d.th = threading.Thread(target=apkInstall, args=(d, apkPath))
@@ -224,9 +260,9 @@ if __name__ == "__main__":
                 d.th = threading.Thread(target=apkInstall, args=(d, apkPath))
                 d.th.setDaemon(True)
                 d.th.start()
-            
-            print("")
 
+            #print("")
+        print(gPrintResult)
         print("Continue. . .")
         sleep(1)
         os.system("cls")
