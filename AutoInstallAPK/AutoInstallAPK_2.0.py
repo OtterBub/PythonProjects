@@ -15,7 +15,7 @@ INSTALLING = 1
 COMPLITE = 2
 
 #ADB NAME
-ADB = "adb"
+ADB = "nox_adb"
 
 
 #Reg
@@ -30,6 +30,7 @@ getPhoneNumReg = re.compile(r"8?[2|0]0?1[8|7|0|1][\d]*")
 class device:
     def __init__(self):
         self.installed = False
+        self.connect = False
         self.installStatus = IDLE
         
         self.modelName = "None"
@@ -37,6 +38,8 @@ class device:
         self.OSVersion = "None"
         self.phoneNum = "None"
         self.th = threading.Thread()
+
+        self.printStatus = "None"
 
 class thrList:
     def __init__(self):
@@ -188,6 +191,7 @@ if __name__ == "__main__":
     devicesDict = dict()
     select = True
 
+    # Main
     while select:
         devicesDict.update(getDeviceInfo(devicesDict))
         print("")
