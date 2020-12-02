@@ -3,30 +3,38 @@ import re
 import sys
 import time
 
+class contact:
+    def __init__(self):
+        self.name = ""
+        self.poc = ""
+        self.mdn = ""
+        self.time = ""
+        self.duplication = list()
+
 if __name__ == "__main__":
     
-    folderPath = 'C:\\Users\\User\\Desktop\\Python\\reg'
-    appPath = os.path.join(os.path.dirname(__file__), folderPath , 'PhoneNumOri.txt')
-    appPath = os.path.abspath(appPath)
+    appPath = str()
 
     if len(sys.argv) > 1:
         appPath = sys.argv[1]
-    
-    print('reg practice')
-    
+    else:
+        print("Need Arguments")
+        input("Press Enter Key Exit Program....")
+        exit()
+        
     f = open(appPath, mode='rt', encoding='utf-8')
 
-    #reg = re.compile(r"[\d]2\:[\d]2\s[\S]{2,5}([\S]*)[\s|\_ |\-]([\S]*\-[\S]*\-[\S]*)")
-    #reg = re.compile(r"[\d]+\:[\d]+\s[\S]+\s([\S]*)[\s|\_ |\-]([\S]*\-[\S]*\-[\S]*)")
+    #Number Reg
+    regNum = re.compile(r"([A-z]*[\d]?)[\-|\_|\s]{1,2}([\d]{3}[-|_|\s]?[\d]{3,4}[-|_|\s]?([\d]{4}))")
 
-    regNum = re.compile(r"([\S]*)[\s|\_|\-]*([\S]{3}\-[\S]{3,4}\-([\S]{4}))")
-    regNum2 = re.compile(r"([\d]{3}[\d]{3,4}([\d]{4}))")
-    regNum3 = re.compile(r"([\d]{3}\-[\d]{3,4}\-([\d]{4}))")
-    regName = re.compile(r"[\d]{2}\:[\d]{2}\s([\S]+)")
-    contactList = list()
-    name = "1"
+    #Name Reg
+    regName = re.compile(r"([\d]{2}:[\d]{2})\s(\S{1,4})")
+    contactDict = dict(str())
+    name = str()
+    time = str()
 
-    while(1):
+    while True:
+        c:contact = contact()
         line = f.readline()
         #print(line)
         resultNum = regNum.search(line)
@@ -34,51 +42,60 @@ if __name__ == "__main__":
         
         if resultName:
             #print(resultName.groups())
-            nameGroup = resultName.group(1)
+            nameGroup = resultName.group(2)
+            time = resultName.group(1)
             name = nameGroup[len(nameGroup)-2:len(nameGroup)]
             #print(name)
         
         if resultNum:
-            #print(resultNum.groups())
-            backNum = resultNum.group(3)
-            PhoneNum = resultNum.group(2)
-            contactList.append(
-                        name + '_' + backNum + ',' + PhoneNum + ',' + 'myContacts,'
-            )
-        else:
-            resultNum = regNum2.search(line)
-            if resultNum:
-                print(resultNum.groups())
-                backNum = resultNum.group(2)
-                PhoneNum = resultNum.group(1)
-                contactList.append(
-                        name + '_' + backNum + ',' + PhoneNum + ',' + 'myContacts,'
-                )
+            c.mdn = resultNum.group(2)
+
+            # remove "-, space" in number
+            c.mdn = re.sub(pattern=r"[\-|\s]", repl='', string=c.mdn)
+
+            # Duplication Check (add Time Check)
+            dup:contact = contactDict.get(c.mdn)
+            if dup:
+                if (type(dup) is contact):
+                    dup.duplication.append(dup.time + ' ' + dup.name)
+                    c = dup
+                    print("%s 중복" %dup.name)
+            
+            c.poc = resultNum.group(1)   
+            c.name = name
+            c.time = time
+
+            if len(c.poc) > 1:
+                c.name += c.poc + "_" + resultNum.group(3)
             else:
-                resultNum = regNum3.search(line)
-                if resultNum:
-                    print(resultNum.groups())
-                    backNum = resultNum.group(2)
-                    PhoneNum = resultNum.group(1)
-                    contactList.append(
-                        name + '_' + backNum + ',' + PhoneNum + ',' + 'myContacts,'
-                    )
+                c.name += "_" + resultNum.group(3)
+
+            
+            contactDict[c.mdn] = c
+            
 
         if not line: 
             f.close()
             break
         #else: input()
-    
+
+    # file write
+
+    # txt to csv
     newFilePath = appPath[:len(appPath)-4] + '_Contact.csv'
     w = open(newFilePath, 'wt', encoding='utf-8')
 
-    w.write("Last Name,Mobile Phone,Categories,\n")
-    
+    # csv file's title
+    w.write("Last Name,Mobile Phone,Categories")
 
-    for output in contactList:
-        w.write(output+'\n')
-        print(output)
+    # contact write
+    for mdn in contactDict:
+        c = contactDict.get(mdn)
+        wstr = '\n%s,%s,myContacts' %(c.name, c.mdn)
+        w.write(wstr)
+        print(wstr)
+        if len(c.duplication) > 0:
+            for dup in c.duplication:
+                print("duplication: %s" %(dup))
 
     w.close()
-    
-    
