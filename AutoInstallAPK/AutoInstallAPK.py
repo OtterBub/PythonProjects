@@ -262,7 +262,7 @@ if __name__ == "__main__":
                 d.th.start()
 
             #print("")
+        os.system("cls")
         print(gPrintResult)
         print("Continue. . .")
         sleep(1)
-        os.system("cls")
