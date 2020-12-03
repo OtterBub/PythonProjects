@@ -4,8 +4,10 @@ import re
 import subprocess
 import sys
 import threading
+import tkinter
 from multiprocessing import Process, Queue
 from time import sleep
+from tkinter import filedialog
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
 #CONST
@@ -15,7 +17,7 @@ INSTALLING = 1
 COMPLITE = 2
 
 #ADB NAME
-ADB = "nox_adb"
+ADB = "adb"
 
 
 #Reg
@@ -207,17 +209,36 @@ def apkInstall(d:device = None, path:str = None):
 
 if __name__ == "__main__":
 
-    apkPath = str()
+    apkPath = ""
+  
     if len(sys.argv) > 1:
         apkPath = sys.argv[1]
     else:
     #    apkPath = r"C:\Users\User\Desktop\Python\AutoInstallAPK\ApiDemos-debug.apk"
-        print("Need Argument")
+        root = tkinter.Tk()
+        root.withdraw()
+        apkPath = filedialog.askopenfilename(
+            initialdir=".\\",
+            parent=root, title="Select APK file",
+            filetypes=(("APK Files","*.apk"),)
+            )       
+
+    if apkPath == "":
+        print("Need Select APK File")
+        input("Press Enter...")
         exit()
 
-    appNameReg = re.compile(r".*\\(.*[.]apk)$")
+    appNameReg = re.compile(r".*[\\|\/](.*[.]apk)$")
+    appInvaliedNameReg = re.compile(r".*[\\|\/](.*[.].*)$")
 
-    appName = appNameReg.match(apkPath).group(1)
+    searchAppName = appNameReg.search(apkPath)
+    if not searchAppName:
+        searchAppName = appInvaliedNameReg.search(apkPath)
+        print("Invalied select file: %s" %(searchAppName.group(1)))
+        print("Need Select APK file")
+        input("Press Enter...")
+        exit()
+    appName = searchAppName.group(1)
 
     devicesDict = dict()
     select = True

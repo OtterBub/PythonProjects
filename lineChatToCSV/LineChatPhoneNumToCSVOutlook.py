@@ -2,6 +2,8 @@ import os
 import re
 import sys
 import time
+import tkinter
+from tkinter import filedialog
 
 class contact:
     def __init__(self):
@@ -13,13 +15,23 @@ class contact:
 
 if __name__ == "__main__":
     
-    appPath = str()
+    appPath = ""
 
     if len(sys.argv) > 1:
         appPath = sys.argv[1]
     else:
-        print("Need Arguments")
-        input("Press Enter Key Exit Program....")
+    #    apkPath = r"C:\Users\User\Desktop\Python\AutoInstallAPK\ApiDemos-debug.apk"
+        root = tkinter.Tk()
+        root.withdraw()
+        appPath = filedialog.askopenfilename(
+            initialdir=".\\",
+            parent=root, title="Select APK file",
+            filetypes=(("APK Files","*.txt"),)
+            )       
+
+    if appPath == "":
+        print("Need Select TXT File")
+        input("Press Enter...")
         exit()
         
     f = open(appPath, mode='rt', encoding='utf-8')
@@ -91,7 +103,7 @@ if __name__ == "__main__":
     # contact write
     for mdn in contactDict:
         c = contactDict.get(mdn)
-        wstr = '\n%s,%s,myContacts' %(c.name, c.mdn)
+        wstr = '\n%s,%s,myContacts' %(c.name + "_Today", c.mdn)
         w.write(wstr)
         print(wstr)
         if len(c.duplication) > 0:
@@ -99,3 +111,4 @@ if __name__ == "__main__":
                 print("duplication: %s" %(dup))
 
     w.close()
+    input("Complete Press Enter...")
