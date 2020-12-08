@@ -9,6 +9,9 @@ Auto Install APK + Appium
 - Auto Initializing for Appium each Devices
 - Get APK File info, Get Phone Number, Android OS Version, ModelName....
 
+AutoInstallAPK_2.31
+- CONNECT 표시 없을시 빈공간 한줄 추가
+
 AutoInstallAPK_2.3
 - 드래그 앤 드롭 설치 가능 유지
 - 드래그 앤 드롭 없이 실행시 파일 선택 GUI 노출

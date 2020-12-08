@@ -75,7 +75,6 @@ def getDeviceInfo(origDict:dict() = None):
 
     for i in resultDict:
         d:device = resultDict.get(i)
-        d.connect = False
     
     getCmdResult = subprocess.check_output('%s devices' %(ADB), text=True)
     getDevices = getCmdResult.splitlines()
@@ -163,8 +162,11 @@ def update(d:device = None):
     
     d.printStatus = ""
 
-    if(d.connect):
+    if d.connect:
         d.printStatus += "CONNECT\n"
+        d.connect = False
+    else:
+        d.printStatus += "\n"
 
     d.printStatus += "[%s] modelName: %s (Android %s) / MDN: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
     d.printStatus += "\n- status: "

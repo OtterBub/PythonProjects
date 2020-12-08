@@ -16,7 +16,7 @@ class contact:
 if __name__ == "__main__":
     
     appPath = ""
-
+    contactsuffix = ""
     if len(sys.argv) > 1:
         appPath = sys.argv[1]
     else:
@@ -25,8 +25,8 @@ if __name__ == "__main__":
         root.withdraw()
         appPath = filedialog.askopenfilename(
             initialdir=".\\",
-            parent=root, title="Select APK file",
-            filetypes=(("APK Files","*.txt"),)
+            parent=root, title="Select txt file",
+            filetypes=(("txt Files","*.txt"),)
             )       
 
     if appPath == "":
@@ -34,6 +34,7 @@ if __name__ == "__main__":
         input("Press Enter...")
         exit()
         
+    contactsuffix = input("Please enter the suffix you want suffix\n")
     f = open(appPath, mode='rt', encoding='utf-8')
 
     #Number Reg
@@ -71,7 +72,7 @@ if __name__ == "__main__":
                 if (type(dup) is contact):
                     dup.duplication.append(dup.time + ' ' + dup.name)
                     c = dup
-                    print("%s 중복" %dup.name)
+                    # print("%s 중복" %dup.name)
             
             c.poc = resultNum.group(1)   
             c.name = name
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     # contact write
     for mdn in contactDict:
         c = contactDict.get(mdn)
-        wstr = '\n%s,%s,myContacts' %(c.name + "_Today", c.mdn)
+        wstr = '\n%s,%s,myContacts' %(c.name + "_" + contactsuffix, c.mdn)
         w.write(wstr)
         print(wstr)
         if len(c.duplication) > 0:
