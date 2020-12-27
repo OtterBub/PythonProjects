@@ -10,6 +10,10 @@ from time import sleep
 from tkinter import filedialog
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
+import traceback
+
+from custom import quickEditMode
+
 #CONST
 #INSTALL STATUS
 IDLE = 0
@@ -18,6 +22,11 @@ COMPLITE = 2
 
 #ADB NAME
 ADB = "adb"
+
+if os.path.isfile(os.path.dirname(sys.argv[0]) + "/nox.txt"):
+    print("Active nox_adb")
+    sleep(1)
+    ADB = "nox_adb"
 
 
 #Reg
@@ -40,6 +49,7 @@ class device:
         self.OSVersion = "None"
         self.phoneNum = "None"
         self.th = threading.Thread()
+        self.count = 1
 
         self.printStatus = "None"
 
@@ -75,6 +85,7 @@ def getDeviceInfo(origDict:dict() = None):
 
     for i in resultDict:
         d:device = resultDict.get(i)
+        d.connect = False
     
     getCmdResult = subprocess.check_output('%s devices' %(ADB), text=True)
     getDevices = getCmdResult.splitlines()
@@ -162,9 +173,8 @@ def update(d:device = None):
     
     d.printStatus = ""
 
-    if d.connect:
+    if(d.connect):
         d.printStatus += "CONNECT\n"
-        d.connect = False
     else:
         d.printStatus += "\n"
 
@@ -173,7 +183,8 @@ def update(d:device = None):
     if d.installStatus is IDLE:
         d.printStatus += "IDLE"
     elif d.installStatus is INSTALLING:
-        d.printStatus += "INSTALLING"
+        d.printStatus += "RECORDING LOG" + "." * d.count
+        d.count = (d.count + 1) % 4
     elif d.installStatus is COMPLITE:
         d.printStatus += "COMPLITE"
 
@@ -182,8 +193,8 @@ def update(d:device = None):
     return d.printStatus
 
 
-def apkInstall(d:device = None, path:str = None):
-    if (not d) or (not path):
+def commandRun(d:device = None, cmd:list = None):
+    if (not d) or (not cmd):
         return False
 
     if not isinstance(d, device):
@@ -196,12 +207,23 @@ def apkInstall(d:device = None, path:str = None):
         #print("[%s / %s] Current Installing" %(d.udid, d.modelName))
         return False
 
+    # command run
     try:
         d.installStatus = INSTALLING
-        subprocess.check_output('%s -s %s install -d -r "%s"' %(ADB, d.udid, path))
+
+        for c in cmd:
+            os.system('%s -s %s %s' %(ADB, d.udid, c))
+
         #print("[%s / %s] Install Success" %(d.udid, d.modelName))
     except subprocess.CalledProcessError:
         d.installStatus = IDLE
+        traceback.print_exc()
+        print("subprocess.CalledProcessError")
+        return False
+    except:
+        d.installStatus = IDLE
+        traceback.print_exc()
+        print("except")
         return False
     
     d.installed = True
@@ -210,46 +232,17 @@ def apkInstall(d:device = None, path:str = None):
 
 
 if __name__ == "__main__":
-
-    apkPath = ""
-  
-    if len(sys.argv) > 1:
-        apkPath = sys.argv[1]
-    else:
-    #    apkPath = r"C:\Users\User\Desktop\Python\AutoInstallAPK\ApiDemos-debug.apk"
-        root = tkinter.Tk()
-        root.withdraw()
-        apkPath = filedialog.askopenfilename(
-            initialdir=".\\",
-            parent=root, title="Select APK file",
-            filetypes=(("APK Files","*.apk"),)
-            )       
-
-    if apkPath == "":
-        print("Need Select APK File")
-        input("Press Enter...")
-        exit()
-
-    appNameReg = re.compile(r".*[\\|\/](.*[.]apk)$")
-    appInvaliedNameReg = re.compile(r".*[\\|\/](.*[.].*)$")
-
-    searchAppName = appNameReg.search(apkPath)
-    if not searchAppName:
-        searchAppName = appInvaliedNameReg.search(apkPath)
-        print("Invalied select file: %s" %(searchAppName.group(1)))
-        print("Need Select APK file")
-        input("Press Enter...")
-        exit()
-    appName = searchAppName.group(1)
-
+    quickEditMode.disable_quickedit()
     devicesDict = dict()
     select = True
 
+    print("First Searching Device Info...")
     # Main
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- AUTO INSTALL [%s] ----------\n\n" %appName
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201223 ----------\n"
+        gPrintResult += "----------- Recording Logcat ----------\n\n"
         devicesDict.update(getDeviceInfo(devicesDict))
         #print("")
         #print("----Installed Devices History Status----")
@@ -259,8 +252,13 @@ if __name__ == "__main__":
             d:device = devicesDict.get(i)
             #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.installStatus))
             gPrintResult += update(d)
+            
+            # ------ command List ------
+            commandList = [
+                'logcat -v threadtime > ./%s.log' %(d.phoneNum + '_' + d.modelName)
+            ]
 
-            if d.installStatus is COMPLITE:
+            if (d.installStatus is COMPLITE) or (not d.connect):
                 #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
                 #print("")
                 continue
@@ -276,11 +274,11 @@ if __name__ == "__main__":
                     #print("")
                     continue
                 else:
-                    d.th = threading.Thread(target=apkInstall, args=(d, apkPath))
+                    d.th = threading.Thread(target=commandRun, args=(d, commandList))
                     d.th.setDaemon(True)
                     d.th.start()
             else:
-                d.th = threading.Thread(target=apkInstall, args=(d, apkPath))
+                d.th = threading.Thread(target=commandRun, args=(d, commandList))
                 d.th.setDaemon(True)
                 d.th.start()
 
@@ -288,4 +286,4 @@ if __name__ == "__main__":
         os.system("cls")
         print(gPrintResult)
         print("Continue. . .")
-        sleep(1)
+        sleep(0.5)

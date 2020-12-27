@@ -3,9 +3,14 @@
 *.csv
 *.apk
 *.zip
+*.pcap
+*.log
 
 # Pyinstaller Result
 *.spec
 *.exe
 build/
 dist/
+
+# MyCustom
+Test/
