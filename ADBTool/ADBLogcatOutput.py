@@ -236,7 +236,7 @@ if __name__ == "__main__":
     devicesDict = dict()
     select = True
 
-    print("First Searching Device Info...")
+    print("Devices Searching...")
     # Main
     while select:
         # print init
