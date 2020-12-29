@@ -18,7 +18,7 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201223 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201230 ----------\n"
         gPrintResult += "----------- Packet Capture ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")
@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 continue
 
             if d.th:
-                if d.installStatus is adb.INSTALLING:
+                if d.installStatus is adb.RUNCOMMAND:
                     #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
                     #print("")
                     continue

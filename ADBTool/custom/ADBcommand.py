@@ -15,7 +15,7 @@ import traceback
 #CONST
 #INSTALL STATUS
 IDLE = 0
-INSTALLING = 1
+RUNCOMMAND = 1
 COMPLITE = 2
 
 #ADB NAME
@@ -40,7 +40,7 @@ class device:
     def __init__(self):
         self.installed = False
         self.connect = False
-        self.installStatus = IDLE
+        self.deviceStatus = IDLE
         
         self.modelName = "None"
         self.udid = "None"
@@ -104,15 +104,15 @@ def getDeviceInfo(origDict:dict() = None):
                 if resultDict.get(udid):
                     tempd:device = resultDict.get(udid)
                     tempd.connect = True
-                    status = tempd.installStatus
+                    status = tempd.deviceStatus
                     if status is COMPLITE:
                         #print("[%s] %s (MDN:%s) is COMPLITE" %(tempd.udid, tempd.modelName, tempd.phoneNum))
                         continue
                     elif status is IDLE:
                         #print("[%s] %s (MDN:%s) is IDLE" %(tempd.udid, tempd.modelName, tempd.phoneNum))
                         continue
-                    elif status is INSTALLING:
-                        #print("[%s] %s (MDN:%s) is INSTALLING" %(tempd.udid, tempd.modelName, tempd.phoneNum))
+                    elif status is RUNCOMMAND:
+                        #print("[%s] %s (MDN:%s) is RUNCOMMAND" %(tempd.udid, tempd.modelName, tempd.phoneNum))
                         continue
 
                 #android getprop
@@ -167,7 +167,7 @@ def getDeviceInfo(origDict:dict() = None):
 
     return resultDict
 
-def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND"):
+def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:bool = False):
     
     d.printStatus = ""
 
@@ -178,13 +178,15 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND"):
 
     d.printStatus += "[%s] modelName: %s (Android %s) / MDN: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
     d.printStatus += "\n- status: "
-    if d.installStatus is IDLE:
+    if d.deviceStatus is IDLE:
         d.printStatus += "IDLE"
-    elif d.installStatus is INSTALLING:
+    elif d.deviceStatus is RUNCOMMAND:
         d.printStatus += runCommandStatus + "." * d.count
         d.count = (d.count + 1) % 4
-    elif d.installStatus is COMPLITE:
+    elif d.deviceStatus is COMPLITE:
         d.printStatus += "COMPLITE"
+
+    
 
     d.printStatus += "\n\n"
 
@@ -198,32 +200,32 @@ def commandRun(d:device = None, cmd:list = None):
     if not isinstance(d, device):
         return False
 
-    if (d.installed is True) or (d.installStatus is COMPLITE):
+    if (d.installed is True) or (d.deviceStatus is COMPLITE):
         #print("[%s / %s] already COMPLITE" %(d.udid, d.modelName))
         return False
-    elif d.installStatus is INSTALLING:
-        #print("[%s / %s] Current Installing" %(d.udid, d.modelName))
+    elif d.deviceStatus is RUNCOMMAND:
+        #print("[%s / %s] Current RUN COMMAND" %(d.udid, d.modelName))
         return False
 
     # command run
     try:
-        d.installStatus = INSTALLING
+        d.deviceStatus = RUNCOMMAND
 
         for c in cmd:
             os.system('%s -s %s %s' %(ADB, d.udid, c))
 
         #print("[%s / %s] Install Success" %(d.udid, d.modelName))
     except subprocess.CalledProcessError:
-        d.installStatus = IDLE
+        d.deviceStatus = IDLE
         traceback.print_exc()
         print("subprocess.CalledProcessError")
         return False
     except:
-        d.installStatus = IDLE
+        d.deviceStatus = IDLE
         traceback.print_exc()
         print("except")
         return False
     
     d.installed = True
-    d.installStatus = COMPLITE
+    d.deviceStatus = COMPLITE
     return True

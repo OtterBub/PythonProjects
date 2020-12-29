@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import threading
+import datetime
 from multiprocessing import Process, Queue
 from time import sleep
 
@@ -18,7 +19,7 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201223 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201230 ----------\n"
         gPrintResult += "----------- Recording Logcat ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")
@@ -30,9 +31,12 @@ if __name__ == "__main__":
             #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.installStatus))
             gPrintResult += adb.update(d, runCommandStatus= 'RECORDING LOG')
             
+            now = datetime.datetime.now()
+
+
             # ------ command List ------
             commandList = [
-                'logcat -v threadtime > ./%s.log' %(d.phoneNum + '_' + d.modelName)
+                'logcat -v threadtime > ./%s.log' %(d.phoneNum + '_' + d.modelName + '_' + now.strftime("%Y%m%d"))
             ]
 
             if (d.installStatus is adb.COMPLITE) or (not d.connect):
@@ -41,7 +45,7 @@ if __name__ == "__main__":
                 continue
 
             if d.th:
-                if d.installStatus is adb.INSTALLING:
+                if d.installStatus is adb.RUNCOMMAND:
                     #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
                     #print("")
                     continue
