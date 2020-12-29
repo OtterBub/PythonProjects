@@ -9,6 +9,7 @@
 # Pyinstaller Result
 *.spec
 *.exe
+*.pyc
 build/
 dist/
 __pycache__/
