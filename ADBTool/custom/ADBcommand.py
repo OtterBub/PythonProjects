@@ -38,7 +38,6 @@ gPrintResult = ""
 
 class device:
     def __init__(self):
-        self.installed = False
         self.connect = False
         self.deviceStatus = IDLE
         
@@ -73,6 +72,25 @@ class thrList:
 
     def clear(self):
         self.ThreadList.clear()
+
+def findPhoneNum(d:device = None, iphonesubinfo:int= 1 ):
+    phoneNum = None
+
+    try:
+        getPhoneNumCmd = subprocess.check_output(
+            "%s -s %s shell \"service call iphonesubinfo %i | cut -c 52-66 | tr -d '. [:space:]+'\""
+            %(ADB, d.udid, iphonesubinfo)
+            , text=True
+        )
+        #print(getPhoneNumCmd)
+        phoneNum = getPhoneNumReg.search(getPhoneNumCmd)
+        
+    except subprocess.CalledProcessError:
+        print("[%s] shell call iphonesubinfo Command Failed" %(d.udid))
+
+    if phoneNum:
+        d.phoneNum = phoneNum.group()
+
             
 
 def getDeviceInfo(origDict:dict() = None):
@@ -129,39 +147,53 @@ def getDeviceInfo(origDict:dict() = None):
                 OSversion = getOSVersionReg.search(getModelCmd)            
 
                 #get PhoneNumCmd
-                phoneNum = None
-                iphonesubinfo = 5
+                # phoneNum = None
+                # iphonesubinfo = 1
 
-                try:
-                    while phoneNum is None:
-                        getPhoneNumCmd = subprocess.check_output(
-                            "%s -s %s shell \"service call iphonesubinfo %i | cut -c 52-66 | tr -d '. [:space:]+'\""
-                            %(ADB, udid, iphonesubinfo)
-                            , text=True
-                        )
-                        #print(getPhoneNumCmd)
-                        phoneNum = getPhoneNumReg.search(getPhoneNumCmd)
-                        iphonesubinfo += 1
-                        if phoneNum:
-                            break
-                        if iphonesubinfo >= 30:
-                            #print("PhoneNum not Found")
-                            break
-                except subprocess.CalledProcessError:
-                    print("[%s] shell call iphonesubinfo Command Failed" %(udid))
+                # try:
+                #     while phoneNum is None:
+                #         getPhoneNumCmd = subprocess.check_output(
+                #             "%s -s %s shell \"service call iphonesubinfo %i | cut -c 52-66 | tr -d '. [:space:]+'\""
+                #             %(ADB, udid, iphonesubinfo)
+                #             , text=True
+                #         )
+                #         #print(getPhoneNumCmd)
+                #         phoneNum = getPhoneNumReg.search(getPhoneNumCmd)
+                #         iphonesubinfo += 1
+                #         if phoneNum:
+                #             break
+                #         if iphonesubinfo >= 32:
+                #             #print("PhoneNum not Found")
+                #             break
+                # except subprocess.CalledProcessError:
+                #     print("[%s] shell call iphonesubinfo Command Failed" %(udid))
+                
+
+                
+
+
 
                 if not OSversion:
                     print("OSversion Notfound")
                 
                 d = device()
+
                 d.udid = udid
                 d.connect = True
-                if phoneNum:
-                    d.phoneNum = phoneNum.group()
+                # if phoneNum:
+                #     d.phoneNum = phoneNum.group()
                 if modelName:
                     d.modelName = modelName.group(1)
                 if OSversion:
                     d.OSVersion = OSversion.group(1)
+
+                # findPhoneNum
+                tlist = thrList()
+                for i in range(1, 31):
+                    tlist.addThread(funcTarget= findPhoneNum, funcArgs= (d,i,))
+                
+                tlist.startThread()
+                tlist.join()
                 
                 resultDict[d.udid] = d
 
@@ -176,7 +208,7 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
     else:
         d.printStatus += "\n"
 
-    d.printStatus += "[%s] modelName: %s (Android %s) / MDN: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
+    d.printStatus += "[%s] modelName: %s (Android %s) / PhoneNumber: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
     d.printStatus += "\n- status: "
     if d.deviceStatus is IDLE:
         d.printStatus += "IDLE"
@@ -184,7 +216,10 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
         d.printStatus += runCommandStatus + "." * d.count
         d.count = (d.count + 1) % 4
     elif d.deviceStatus is COMPLITE:
-        d.printStatus += "COMPLITE"
+        d.printStatus += "COMPLETE"
+
+    if repeat and (d.deviceStatus is COMPLITE) and (d.connect is False):
+        d.deviceStatus = IDLE
 
     
 
@@ -193,14 +228,14 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
     return d.printStatus
 
 
-def commandRun(d:device = None, cmd:list = None):
+def runCommand(d:device = None, cmd:list = None):
     if (not d) or (not cmd):
         return False
 
     if not isinstance(d, device):
         return False
 
-    if (d.installed is True) or (d.deviceStatus is COMPLITE):
+    if d.deviceStatus is COMPLITE:
         #print("[%s / %s] already COMPLITE" %(d.udid, d.modelName))
         return False
     elif d.deviceStatus is RUNCOMMAND:
@@ -210,9 +245,9 @@ def commandRun(d:device = None, cmd:list = None):
     # command run
     try:
         d.deviceStatus = RUNCOMMAND
-
+        os.system('echo off')
         for c in cmd:
-            os.system('%s -s %s %s' %(ADB, d.udid, c))
+           os.system('%s -s %s %s' %(ADB, d.udid, c))
 
         #print("[%s / %s] Install Success" %(d.udid, d.modelName))
     except subprocess.CalledProcessError:
@@ -226,6 +261,5 @@ def commandRun(d:device = None, cmd:list = None):
         print("except")
         return False
     
-    d.installed = True
     d.deviceStatus = COMPLITE
     return True

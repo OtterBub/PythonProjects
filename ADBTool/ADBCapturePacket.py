@@ -27,8 +27,8 @@ if __name__ == "__main__":
         # Install APK
         for i in devicesDict:
             d:adb.device = devicesDict.get(i)
-            #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.installStatus))
-            gPrintResult += adb.update(d, "CAPTURRING PACKETS")
+            #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.deviceStatus))
+            gPrintResult += adb.update(d, "CAPTURRING PACKETS", repeat= True)
             
             # ------ command List ------
             commandList = [
@@ -36,13 +36,13 @@ if __name__ == "__main__":
                 'shell tcpdump -i any -p -s 0 -w "/sdcard/%s.pcap"' %(d.phoneNum + '_' + d.modelName)
             ]
 
-            if (d.installStatus is adb.COMPLITE) or (not d.connect):
+            if (d.deviceStatus is adb.COMPLITE) or (not d.connect):
                 #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
                 #print("")
                 continue
 
             if d.th:
-                if d.installStatus is adb.RUNCOMMAND:
+                if d.deviceStatus is adb.RUNCOMMAND:
                     #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
                     #print("")
                     continue
@@ -52,11 +52,11 @@ if __name__ == "__main__":
                     #print("")
                     continue
                 else:
-                    d.th = threading.Thread(target=adb.commandRun, args=(d, commandList))
+                    d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
                     d.th.setDaemon(True)
                     d.th.start()
             else:
-                d.th = threading.Thread(target=adb.commandRun, args=(d, commandList))
+                d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
                 d.th.setDaemon(True)
                 d.th.start()
 
