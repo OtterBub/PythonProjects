@@ -7,11 +7,10 @@ from multiprocessing import Process, Queue
 from time import sleep
 
 from custom import ADBcommand as adb
-from custom import quickEditMode
 
 if __name__ == "__main__":
-    quickEditMode.disable_quickedit()
     devicesDict = dict()
+    filenameDict = dict()
     select = True
 
     print("Devices Searching...")
@@ -19,8 +18,8 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210107 ----------\n"
-        gPrintResult += "----------- Packet Capture Output ----------\n\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201230 ----------\n"
+        gPrintResult += "----------- Recording Logcat ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")
         #print("----Installed Devices History Status----")
@@ -29,15 +28,32 @@ if __name__ == "__main__":
         for i in devicesDict:
             d:adb.device = devicesDict.get(i)
             #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.deviceStatus))
-            gPrintResult += adb.update(d, "SEDING DATA", repeat= True)
 
-            now = datetime.datetime.now()
-            
             # ------ command List ------
+            now = datetime.datetime.now()
+            filepath = './%s.log' %(d.phoneNum + '_' + d.modelName + '_' + now.strftime("%Y%m%d%H%M%S"))
+
             commandList = [
-                'root',
-                'pull "/sdcard/%s.pcap" .' %(d.phoneNum + '_' + d.modelName)
+                'logcat -v threadtime >> "%s"' %(filepath)
             ]
+
+            # ------ update ------
+            
+            if not filenameDict.get(d.udid):
+                rpath = os.path.realpath(filepath)
+                filenameDict[d.udid] = rpath
+            
+            if os.path.isfile(filenameDict.get(d.udid)):
+                result = "%.2f" %(os.path.getsize(filenameDict.get(d.udid)) / (1024.0))
+            else:
+                result = "None"
+
+            statestrList = [
+                result + 'KB \n'
+            ]
+
+            gPrintResult += adb.update(d, runCommandStatus= 'RECORDING LOG', repeat= True, addstatestr= statestrList)
+
 
             if (d.deviceStatus is adb.COMPLITE) or (not d.connect):
                 #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))

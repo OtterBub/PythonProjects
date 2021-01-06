@@ -102,11 +102,9 @@ def getDeviceInfo(origDict:dict() = None):
     for i in resultDict:
         d:device = resultDict.get(i)
         d.connect = False
-    try:
-        getCmdResult = subprocess.check_output('%s devices' %(ADB), text=True)
-        getDevices = getCmdResult.splitlines()
-    except:
-        return resultDict
+    
+    getCmdResult = subprocess.check_output('%s devices' %(ADB), text=True)
+    getDevices = getCmdResult.splitlines()
 
     #print("----Current Connected Device List Status----")
     
