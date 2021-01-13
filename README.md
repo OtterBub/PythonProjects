@@ -1,16 +1,16 @@
 # PythonProjects
  
-- Appium
-Appium Test Project
+Appium
+- Appium Test Project
 
-- AutoInstallAPK
-install apk file for MultiDevice
+AutoInstallAPK
+- install apk file for MultiDevice
 
-- GetDevicesInfo
-Get Android devices information
+GetDevicesInfo
+- Get Android devices information
 
--lineChatToCSV
-Convert Line Messenger Chat Data .txt to .csv file
+lineChatToCSV
+- Convert Line Messenger Chat Data .txt to .csv file
 
-- hello, Test
-TestPython Folder
+hello, Test
+- TestPython Folder
