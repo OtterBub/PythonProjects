@@ -1,5 +1,14 @@
 # LineChatPhoneNumToCSVOutlook
 
+LineChatPhoneNumToCSVOutlook_1.81
+- 제작자 정보 추가
+
+LineChatPhoneNumToCSVOutlook_1.8
+- 접미사 미설정시 '_' 언더바 안붙음
+- 변환결과 .txt 파일로 출력
+- 결과 텍스트에 최종 연락처 사용 날짜 포함
+- 중복 연락처시 중복 되었던 이력에 날짜 추가
+
 LineChatPhoneNumToCSVOutlook_1.7
 - 접미사 커스텀 가능 추가
 
