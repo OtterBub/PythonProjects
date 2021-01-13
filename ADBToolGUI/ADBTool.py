@@ -14,73 +14,35 @@ if __name__ == "__main__":
     select = True
 
     print("Devices Searching...")
-    # Main
-    while select:
-        # print init
-        gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 201230 ----------\n"
-        gPrintResult += "----------- Recording Logcat ----------\n\n"
-        devicesDict.update(adb.getDeviceInfo(devicesDict))
-        #print("")
-        #print("----Installed Devices History Status----")
 
-        # Install APK
+    devicesDict.update(adb.getDeviceInfo(devicesDict))
+
+    # main
+    while True:
+        adb.gPrintResult = ''
+        devicesDict.update(adb.getDeviceInfo(devicesDict))
+        
         for i in devicesDict:
             d:adb.device = devicesDict.get(i)
-            #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.deviceStatus))
-
-            # ------ command List ------
-            now = datetime.datetime.now()
-            filepath = './%s.log' %(d.phoneNum + '_' + d.modelName + '_' + now.strftime("%Y%m%d%H%M%S"))
-
-            commandList = [
-                'logcat -v threadtime >> "%s"' %(filepath)
-            ]
-
-            # ------ update ------
             
-            if not filenameDict.get(d.udid):
-                rpath = os.path.realpath(filepath)
-                filenameDict[d.udid] = rpath
-            
-            if os.path.isfile(filenameDict.get(d.udid)):
-                result = "%.2f" %(os.path.getsize(filenameDict.get(d.udid)) / (1024.0))
-            else:
-                result = "None"
-
-            statestrList = [
-                result + 'KB \n'
-            ]
-
-            gPrintResult += adb.update(d, runCommandStatus= 'RECORDING LOG', repeat= True, addstatestr= statestrList)
-
-
-            if (d.deviceStatus is adb.COMPLITE) or (not d.connect):
-                #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
-                #print("")
-                continue
-
-            if d.th:
-                if d.deviceStatus is adb.RUNCOMMAND:
-                    #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
-                    #print("")
-                    continue
-
-                if d.th.is_alive():
-                    #print("[%s / %s] d.th.is_alive() is True" %(d.udid, d.modelName))
-                    #print("")
-                    continue
-                else:
-                    d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
-                    d.th.setDaemon(True)
-                    d.th.start()
-            else:
-                d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
+            if d.deviceStatus is adb.IDLE and d.connect:
+                commandList = [
+                    'logcat -v threadtime >> "./%s.log"' %(d.modelName + '-' + d.phoneNum)
+                ]
+                d.th = threading.Thread(target=adb.runCommand, args=(d, commandList,))
                 d.th.setDaemon(True)
                 d.th.start()
 
+            if d.deviceStatus is adb.COMPLITE and not d.connect:
+                d.deviceStatus = adb.IDLE
+
+            addstr = [
+                "[modelname] %s\n" %d.modelName
+            ]
+            adb.gPrintResult += adb.update(d, runCommandStatus= 'RECORDING LOG', addstatestr= addstr)
+    
             #print("")
         os.system("cls")
-        print(gPrintResult)
+        print(adb.gPrintResult)
         print("Continue. . .")
         sleep(0.5)

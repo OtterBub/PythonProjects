@@ -14,13 +14,18 @@ class contact:
         self.duplication = list()
 
 if __name__ == "__main__":
+
+    intro = """
+    -------------- TEST ENC Park SungKyoun 20210114 --------------
+    -------------- LineChat.txt (utf-8) To CSV File --------------
+    """
+    print(intro)
     
     appPath = ""
     contactsuffix = ""
     if len(sys.argv) > 1:
         appPath = sys.argv[1]
     else:
-    #    apkPath = r"C:\Users\User\Desktop\Python\AutoInstallAPK\ApiDemos-debug.apk"
         root = tkinter.Tk()
         root.withdraw()
         appPath = filedialog.askopenfilename(
@@ -33,25 +38,34 @@ if __name__ == "__main__":
         print("Need Select TXT File")
         input("Press Enter...")
         exit()
-        
+    
+    
     contactsuffix = input("Please enter the suffix you want suffix\n")
+    if len(contactsuffix) > 0:
+        contactsuffix = '_' + contactsuffix
+        
     f = open(appPath, mode='rt', encoding='utf-8')
 
-    #Number Reg
+    # date Reg
+    regDate = re.compile(r"^([\d]{4}).\s([\d]{2}).\s([\d]{2}).")
+
+    # Number Reg
     regNum = re.compile(r"([A-z]*[\d]?)[\-|\_|\s]{1,2}([\d]{3}[-|_|\s]?[\d]{3,4}[-|_|\s]?([\d]{4}))")
 
-    #Name Reg
+    # Name Reg
     regName = re.compile(r"([\d]{2}:[\d]{2})\s(\S{1,4})")
     contactDict = dict(str())
     name = str()
     time = str()
+    date = str()
 
     while True:
         c:contact = contact()
         line = f.readline()
         #print(line)
-        resultNum = regNum.search(line)
         resultName = regName.search(line)
+        resultNum = regNum.search(line)
+        resultDate = regDate.search(line)
         
         if resultName:
             #print(resultName.groups())
@@ -59,6 +73,10 @@ if __name__ == "__main__":
             time = resultName.group(1)
             name = nameGroup[len(nameGroup)-2:len(nameGroup)]
             #print(name)
+        
+        if resultDate:
+            date = resultDate.group(1) + resultDate.group(2) + resultDate.group(3) + '_'
+            # print(date)
         
         if resultNum:
             c.mdn = resultNum.group(2)
@@ -76,7 +94,7 @@ if __name__ == "__main__":
             
             c.poc = resultNum.group(1)   
             c.name = name
-            c.time = time
+            c.time = date + time
 
             if len(c.poc) > 1:
                 c.name += c.poc + "_" + resultNum.group(3)
@@ -92,11 +110,19 @@ if __name__ == "__main__":
             break
         #else: input()
 
+    if len(contactDict) <= 0 :
+        print("Dont Search Contact Please input Line txt")
+        input("Press Enter Key...")
+        exit(0)
+
+
     # file write
 
     # txt to csv
     newFilePath = appPath[:len(appPath)-4] + '_Contact.csv'
+    convertResult = appPath[:len(appPath)-4] + '_ConvertResult.txt'
     w = open(newFilePath, 'wt', encoding='utf-8')
+    resultw = open(convertResult, 'wt', encoding='utf-8')
 
     # csv file's title
     w.write("Last Name,Mobile Phone,Categories")
@@ -104,12 +130,24 @@ if __name__ == "__main__":
     # contact write
     for mdn in contactDict:
         c = contactDict.get(mdn)
-        wstr = '\n%s,%s,myContacts' %(c.name + "_" + contactsuffix, c.mdn)
+        wstr = '\n%s,%s,myContacts' %(c.name + contactsuffix, c.mdn)
         w.write(wstr)
-        print(wstr)
-        if len(c.duplication) > 0:
-            for dup in c.duplication:
-                print("duplication: %s" %(dup))
 
+        r = wstr.strip(",myContacts") + '/ Last Date: ' + c.time
+        resultw.write(r)
+        print(r, end='')
+        if len(c.duplication) > 0:
+            print()
+            resultw.write('\n')
+            c.duplication.reverse()
+            for dup in c.duplication:
+                r = "duplication: %s\n" %(dup)
+                resultw.write(r)
+                print(r, end='')
     w.close()
+    
+    r = "\n\n--- Found Contact: %s" %(len(contactDict)) + "---\n"
+    print(r, end='')
+    resultw.write(r)
+    resultw.close()
     input("Complete Press Enter...")

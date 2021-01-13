@@ -131,10 +131,10 @@ def getDeviceInfo(origDict:dict() = None):
                     print("[%s] shell getprop Command Failed" %(udid))
                 #print(getModelCmd)
 
-                #get Name
+                # get Name
                 modelName = getModelReg.search(getModelCmd)
                 
-                #get OSversion
+                # get OSversion
                 OSversion = getOSVersionReg.search(getModelCmd)            
 
                 d = device()
@@ -160,7 +160,7 @@ def getDeviceInfo(origDict:dict() = None):
 
     return resultDict
 
-def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:bool = False, addstatestr:list = None):
+def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", addstatestr:list = None):
     
     d.printStatus = ""
 
@@ -179,10 +179,6 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
     elif d.deviceStatus is COMPLITE:
         d.printStatus += "COMPLETE"
 
-    # changed state to IDLE for repeat command
-    if repeat and (d.deviceStatus is COMPLITE) and (d.connect is False):
-        d.deviceStatus = IDLE
-    
     d.printStatus += "\n"
 
     # Add StateString
