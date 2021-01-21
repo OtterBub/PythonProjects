@@ -40,7 +40,7 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210107 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210120 ----------\n"
         gPrintResult += "----------- Install %s ----------\n\n" %(appname)
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
             # ------ command List ------
             commandList = [
-                'install -r -d %s' %(apkPath)
+                'install -r -d "%s"' %(apkPath)
             ]
 
             if (d.deviceStatus is adb.COMPLITE) or (not d.connect):

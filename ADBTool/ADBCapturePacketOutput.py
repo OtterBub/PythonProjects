@@ -19,7 +19,7 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210107 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210120 ----------\n"
         gPrintResult += "----------- Packet Capture Output ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")

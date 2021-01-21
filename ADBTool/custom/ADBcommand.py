@@ -8,7 +8,7 @@ import tkinter
 from multiprocessing import Process, Queue
 from time import sleep
 from tkinter import filedialog
-from typing import Any, Callable, List, Mapping, Optional, Tuple
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Iterable
 
 import traceback
 
@@ -30,6 +30,8 @@ if os.path.isfile(os.path.dirname(sys.argv[0]) + "/nox.txt"):
 #Reg
 getModelReg = re.compile(r"model]:\s\[([\S]*)\]")
 getOSVersionReg = re.compile(r"version.release]:\s\[([\S]*)\]")
+getBuildTypeReg = re.compile(r"build.type]:\s\[([\S]*)\]")
+getBuildTagsReg = re.compile(r"build.tags]:\s\[([\S]*)\]")
 getPhoneNumReg = re.compile(r"8?[2|0]0?1[8|7|0|1][\d]*")
 
 #GLOBAL
@@ -45,6 +47,8 @@ class device:
         self.udid = "None"
         self.OSVersion = "None"
         self.phoneNum = "None"
+        self.buildtype = "None"
+        self.buildtags = "None"
         self.th = threading.Thread()
         self.count = 1
 
@@ -58,9 +62,15 @@ class thrList:
     def __init__(self):
         self.ThreadList = []
 
-    def addThread(self, funcTarget:Optional[Callable[..., Any]] = ... ,funcArgs:tuple = []):        
-        thr = threading.Thread(target=funcTarget, args=funcArgs)
+    def addThread(self, funcTarget= None,
+                        funcArgs= None,
+                        funcKwargs= None):
+        thr = threading.Thread(target=funcTarget, args=funcArgs, kwargs=funcKwargs)
         self.ThreadList.append(thr)
+    
+    def addThread_t(self, thr:threading.Thread = None):
+        if thr:
+            self.ThreadList.append(thr)
 
     def startThread(self):
         for thr in self.ThreadList:
@@ -137,7 +147,11 @@ def getDeviceInfo(origDict:dict() = None):
                 modelName = getModelReg.search(getModelCmd)
                 
                 # get OSversion
-                OSversion = getOSVersionReg.search(getModelCmd)            
+                OSversion = getOSVersionReg.search(getModelCmd)    
+
+                # get build type,tags
+                buildtype = getBuildTypeReg.search(getModelCmd)
+                buildtags = getBuildTagsReg.search(getModelCmd)
 
                 d = device()
 
@@ -149,6 +163,10 @@ def getDeviceInfo(origDict:dict() = None):
                     d.modelName = modelName.group(1)
                 if OSversion:
                     d.OSVersion = OSversion.group(1)
+                if buildtype:
+                    d.buildtype = buildtype.group(1)
+                if buildtags:
+                    d.buildtags = buildtags.group(1)
 
                 # FindPhoneNum multi thread
                 tlist = thrList()
@@ -172,6 +190,7 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
         d.printStatus += "\n"
 
     d.printStatus += "[%s] modelName: %s (Android %s) / PhoneNumber: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
+    d.printStatus += "\nBuildInfo: [Tags: (%s)] [Type: (%s)]" %(d.buildtags, d.buildtype)
     d.printStatus += "\n- status: "
     if d.deviceStatus is IDLE:
         d.printStatus += "IDLE"
@@ -213,9 +232,15 @@ def runCommand(d:device = None, cmd:list = None):
     # command run
     try:
         d.deviceStatus = RUNCOMMAND
-        os.system('echo off')
+        # os.system('echo off')
+        # for c in cmd:
+        #    os.system('%s -s %s %s' %(ADB, d.udid, c))
+        
         for c in cmd:
-           os.system('%s -s %s %s' %(ADB, d.udid, c))
+            r = subprocess.run('%s -s %s %s' %(ADB, d.udid, c), shell=True, text=True)
+            if r.returncode != 0:
+                d.deviceStatus = IDLE
+                return False
 
         #print("[%s / %s] Install Success" %(d.udid, d.modelName))
     except subprocess.CalledProcessError:

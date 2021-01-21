@@ -20,7 +20,7 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210107 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210120 ----------\n"
         gPrintResult += "----------- Recording Logcat ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
             # ------ command List ------
             now = datetime.datetime.now()
-            filepath = './%s.log' %(d.phoneNum + '_' + d.modelName + '_' + now.strftime("%Y%m%d%H%M%S"))
+            filepath = './%s.log' %(d.phoneNum + '_' + d.modelName + '(' + d.OSVersion + ')' + '_' + now.strftime("%Y%m%d%H%M%S"))
 
             commandList = [
                 'logcat -v threadtime >> "%s"' %(filepath)
@@ -46,9 +46,9 @@ if __name__ == "__main__":
                 filenameDict[d.udid] = rpath
             
             if os.path.isfile(filenameDict.get(d.udid)):
-                result = "%.2f KB\n" %(os.path.getsize(filenameDict.get(d.udid)) / (1024.0))
+                result = "\n%.2f KB\n" %(os.path.getsize(filenameDict.get(d.udid)) / (1024.0))
             else:
-                result = "None"
+                result = "\nNone\n"
 
             statestrList = [
                 result
@@ -86,4 +86,4 @@ if __name__ == "__main__":
         os.system("cls")
         print(gPrintResult)
         print("Continue. . .")
-        sleep(0.5)
+        sleep(1)

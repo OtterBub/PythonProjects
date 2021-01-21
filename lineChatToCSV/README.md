@@ -1,5 +1,9 @@
 # LineChatPhoneNumToCSVOutlook
 
+LineChatPhoneNumToCSVOutlook_1.87
+- 주석 설명 좀더 추가
+- 모든 전화번호 형식 찾도록 추가
+
 LineChatPhoneNumToCSVOutlook_1.81
 - 제작자 정보 추가
 
