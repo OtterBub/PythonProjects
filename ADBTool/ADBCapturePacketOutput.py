@@ -19,51 +19,26 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210120 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210405 ----------\n"
+        gPrintResult += "----------- ADBcommand Module Ver: %s ----------\n" %(adb.VERSION)
         gPrintResult += "----------- Packet Capture Output ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
-        #print("")
-        #print("----Installed Devices History Status----")
 
         # Install APK
         for i in devicesDict:
             d:adb.device = devicesDict.get(i)
-            #print("[%s] modelName: %s (Android %s) / MDN: %s / status: %i" %(d.udid, d.modelName, d.OSVersion, d.phoneNum, d.deviceStatus))
-            gPrintResult += adb.update(d, "SEDING DATA", repeat= True)
-
-            now = datetime.datetime.now()
             
-            # ------ command List ------
+            # ------ Command List ------
             commandList = [
                 'root',
                 'pull "/sdcard/%s.pcap" .' %(d.phoneNum + '_' + d.modelName)
             ]
 
-            if (d.deviceStatus is adb.COMPLITE) or (not d.connect):
-                #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
-                #print("")
-                continue
+            # ------ Update ------
+            gPrintResult += adb.update(d, "SEDING DATA", repeat= True)
+            adb.runThread(d, func= adb.runCommand, a= (d, commandList))
 
-            if d.th:
-                if d.deviceStatus is adb.RUNCOMMAND:
-                    #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
-                    #print("")
-                    continue
 
-                if d.th.is_alive():
-                    #print("[%s / %s] d.th.is_alive() is True" %(d.udid, d.modelName))
-                    #print("")
-                    continue
-                else:
-                    d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
-                    d.th.setDaemon(True)
-                    d.th.start()
-            else:
-                d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
-                d.th.setDaemon(True)
-                d.th.start()
-
-            #print("")
         os.system("cls")
         print(gPrintResult)
         print("Continue. . .")

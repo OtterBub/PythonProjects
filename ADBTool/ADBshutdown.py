@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import threading
+import datetime
 from multiprocessing import Process, Queue
 from time import sleep
 
@@ -18,26 +19,27 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210405 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 211020 ----------\n"
         gPrintResult += "----------- ADBcommand Module Ver: %s ----------\n" %(adb.VERSION)
-        gPrintResult += "----------- Packet Capture ----------\n\n"
+        gPrintResult += "----------- shell reboot -p ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
 
         # Install APK
         for i in devicesDict:
             d:adb.device = devicesDict.get(i)
-            
+
             # ------ command List ------
             commandList = [
-                'root',
-                'shell tcpdump -i any -p -s 0 -w "/sdcard/%s.pcap"' %(d.phoneNum + '_' + d.modelName)
+                "shell reboot -p"
             ]
 
-            # ------ Update ------
-            gPrintResult += adb.update(d, "CAPTURRING PACKETS", repeat= True)
-            adb.runThread(d, func= adb.runCommand, a= (d, commandList))
+            # ------ update ------
+            gPrintResult += adb.update(d, runCommandStatus= 'Shutdown Device', repeat= False)
+            adb.runThread(d= d, func= adb.runCommand, a= (d, commandList))
+
+            
 
         os.system("cls")
         print(gPrintResult)
         print("Continue. . .")
-        sleep(0.5)
+        sleep(1)

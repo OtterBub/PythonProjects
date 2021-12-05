@@ -13,10 +13,15 @@ from typing import Any, Callable, List, Mapping, Optional, Tuple, Iterable
 import traceback
 
 #CONST
+#ADB MODULE VERSION
+VERSION = '0.211013.3'
+
 #INSTALL STATUS
 IDLE = 0
 RUNCOMMAND = 1
 COMPLITE = 2
+KEYINTERRUPT = 3
+ERROR = 4
 
 #ADB NAME
 ADB = "adb"
@@ -42,6 +47,7 @@ class device:
     def __init__(self):
         self.connect = False
         self.deviceStatus = IDLE
+        self.errorcode = "None"
         
         self.modelName = "None"
         self.udid = "None"
@@ -53,6 +59,10 @@ class device:
         self.count = 1
 
         self.printStatus = "None"
+
+        self.customData = None
+        self.customString = None
+        self.customErrorString = None
 
     def getInfoStr(self) -> str:
         return self.printStatus
@@ -138,9 +148,22 @@ def getDeviceInfo(origDict:dict() = None):
 
                 #android getprop
                 try:
-                    getModelCmd = subprocess.check_output(r'%s -s %s shell getprop' %(ADB, udid), text=True)
+                    setcmd = (r'%s -s %s shell getprop' %(ADB, udid))
+                    getModelCmd = subprocess.check_output(setcmd, text=True)
                 except subprocess.CalledProcessError:
                     print("[%s] shell getprop Command Failed" %(udid))
+                except :
+                    print("[%s] shell getprop Command Failed" %(udid))
+                    
+                    d = device()
+                    d.errorcode = "getprop Error"
+                    d.customErrorString = "\033[91m" + "shell getprop Command Failed" + "\033[0m"
+                    
+                    d.udid = udid
+                    d.connect = True
+                    resultDict[d.udid] = d
+                    continue
+
                 #print(getModelCmd)
 
                 # get Name
@@ -185,9 +208,20 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
     d.printStatus = ""
 
     if(d.connect):
-        d.printStatus += "CONNECT\n"
+        d.printStatus += "\033[92m" + "CONNECT" + "\033[0m"
+    elif (d.deviceStatus not in [IDLE, COMPLITE]):
+        d.deviceStatus = ERROR
+    else:
+        d.printStatus += "\033[91m" + "DISCONNECT" + "\033[0m"
+    
+    # add customErrorString
+    if d.customErrorString and (len(d.customErrorString) > 0):
+        d.printStatus += " - "
+        d.printStatus += d.customErrorString
+        d.printStatus += "\n"
     else:
         d.printStatus += "\n"
+
 
     d.printStatus += "[%s] modelName: %s (Android %s) / PhoneNumber: %s" %(d.udid, d.modelName, d.OSVersion, d.phoneNum)
     d.printStatus += "\nBuildInfo: [Tags: (%s)] [Type: (%s)]" %(d.buildtags, d.buildtype)
@@ -199,9 +233,14 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
         d.count = (d.count + 1) % 4
     elif d.deviceStatus is COMPLITE:
         d.printStatus += "COMPLETE"
+    elif d.deviceStatus is ERROR:
+        d.printStatus += "\033[91m" + "ERROR: " + "\033[0m"
+        d.printStatus += d.errorcode
+    elif d.deviceStatus is KEYINTERRUPT:
+        d.printStatus += "KEYINTERRUPT"
 
     # changed state to IDLE for repeat command
-    if repeat and (d.deviceStatus is COMPLITE) and (d.connect is False):
+    if (repeat and (d.deviceStatus is COMPLITE) and (d.connect is False)) or ((d.connect is False) and (d.deviceStatus is ERROR)):
         d.deviceStatus = IDLE
     
     
@@ -213,20 +252,41 @@ def update(d:device = None, runCommandStatus:str = "RUNNING COMMAND", repeat:boo
     else:
         d.printStatus += "\n"
 
+    if d.customString and (len(d.customString) > 0):
+        d.printStatus += d.customString
+        d.printStatus += "\n"
+
     d.printStatus += "\n"
 
     return d.printStatus
+
+def runThread(d:device = None, func: Optional[Callable[..., Any]] = ..., a: Iterable[Any] = ...):
+    if(d.deviceStatus is COMPLITE) or (not d.connect):
+        return False
+
+    if d.th:
+        if (d.deviceStatus is RUNCOMMAND) or d.th.is_alive():
+            # Thread가 실행중이고 device 상태가 RUNCOMMAND면 패스
+            return False
+
+        else:
+            d.th = threading.Thread(target=func, args=a)
+            d.th.setDaemon(True)
+            d.th.start()
+    else:
+        d.th = threading.Thread(target=func, args=a)
+        d.th.setDaemon(True)
+        d.th.start()
+    
+    return True
 
 
 def runCommand(d:device = None, cmd:list = None):
     if (not d) or (not cmd):
         return False
 
-    if d.deviceStatus is COMPLITE:
+    if d.deviceStatus in [COMPLITE, RUNCOMMAND, KEYINTERRUPT, ERROR]:
         #print("[%s / %s] already COMPLITE" %(d.udid, d.modelName))
-        return False
-    elif d.deviceStatus is RUNCOMMAND:
-        #print("[%s / %s] Current RUN COMMAND" %(d.udid, d.modelName))
         return False
 
     # command run
@@ -239,18 +299,22 @@ def runCommand(d:device = None, cmd:list = None):
         for c in cmd:
             r = subprocess.run('%s -s %s %s' %(ADB, d.udid, c), shell=True, text=True)
             if r.returncode != 0:
-                d.deviceStatus = IDLE
+                d.errorcode = "%d" %r.returncode
+                d.deviceStatus = ERROR
                 return False
 
         #print("[%s / %s] Install Success" %(d.udid, d.modelName))
     except subprocess.CalledProcessError:
-        d.deviceStatus = IDLE
-        traceback.print_exc()
+        d.deviceStatus = ERROR
+        # traceback.print_exc()
         print("subprocess.CalledProcessError")
         return False
+    except KeyboardInterrupt:
+        d.deviceStatus = KEYINTERRUPT
+        return True
     except:
-        d.deviceStatus = IDLE
-        traceback.print_exc()
+        d.deviceStatus = ERROR
+        # traceback.print_exc()
         print("except")
         return False
     

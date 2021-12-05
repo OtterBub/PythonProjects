@@ -9,6 +9,12 @@ from time import sleep
 from custom import ADBcommand as adb
 from custom import quickEditMode
 
+# Patch History
+''' 
+210906
+번호_단말명(OS버전)_날짜시간.log -> 단말명(OS버전)_번호_날짜시간.log 으로 변경
+'''
+
 if __name__ == "__main__":
     quickEditMode.disable_quickedit()
     devicesDict = dict()
@@ -20,7 +26,8 @@ if __name__ == "__main__":
     while select:
         # print init
         gPrintResult = ""
-        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210120 ----------\n"
+        gPrintResult += "----------- by TEST ENC ParkSungKyoung 210906 ----------\n"
+        gPrintResult += "----------- ADBcommand Module Ver: %s ----------\n" %(adb.VERSION)
         gPrintResult += "----------- Recording Logcat ----------\n\n"
         devicesDict.update(adb.getDeviceInfo(devicesDict))
         #print("")
@@ -33,56 +40,32 @@ if __name__ == "__main__":
 
             # ------ command List ------
             now = datetime.datetime.now()
-            filepath = './%s.log' %(d.phoneNum + '_' + d.modelName + '(' + d.OSVersion + ')' + '_' + now.strftime("%Y%m%d%H%M%S"))
+            filepath = './%s.log' %(d.modelName + '(' + d.OSVersion + ')' + '_' + d.phoneNum + '_' + now.strftime("%Y%m%d%H%M%S"))
 
             commandList = [
                 'logcat -v threadtime >> "%s"' %(filepath)
             ]
 
-            # ------ update ------
-            
+            # ------ Get Log File Size ------
+
+            # found logFilename
             if not filenameDict.get(d.udid):
                 rpath = os.path.realpath(filepath)
                 filenameDict[d.udid] = rpath
             
+            # Logfile Size Update
             if os.path.isfile(filenameDict.get(d.udid)):
-                result = "\n%.2f KB\n" %(os.path.getsize(filenameDict.get(d.udid)) / (1024.0))
+                d.customString = "LogSize: %.2f KB" %(os.path.getsize(filenameDict.get(d.udid)) / (1024.0))
             else:
-                result = "\nNone\n"
-
-            statestrList = [
-                result
-            ]
-
-            gPrintResult += adb.update(d, runCommandStatus= 'RECORDING LOG', repeat= True, addstatestr= statestrList)
-
+                d.customString = " "
 
             if (d.deviceStatus is adb.COMPLITE) or (not d.connect):
                 filenameDict[d.udid] = None
-                #print("[%s / %s] %s APK Install Success" %(d.udid, d.modelName, appName))
-                #print("")
-                continue
 
-            if d.th:
-                if d.deviceStatus is adb.RUNCOMMAND:
-                    #print("[%s / %s] Current APK Installing" %(d.udid, d.modelName))
-                    #print("")
-                    continue
+            # ------ Update ------
+            gPrintResult += adb.update(d, runCommandStatus= 'RECORDING LOG', repeat= True)
+            adb.runThread(d= d, func= adb.runCommand, a= (d, commandList))
 
-                if d.th.is_alive():
-                    #print("[%s / %s] d.th.is_alive() is True" %(d.udid, d.modelName))
-                    #print("")
-                    continue
-                else:
-                    d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
-                    d.th.setDaemon(True)
-                    d.th.start()
-            else:
-                d.th = threading.Thread(target=adb.runCommand, args=(d, commandList))
-                d.th.setDaemon(True)
-                d.th.start()
-
-            #print("")
         os.system("cls")
         print(gPrintResult)
         print("Continue. . .")

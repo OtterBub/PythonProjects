@@ -48,10 +48,14 @@ if __name__ == "__main__":
 
     # date Reg
     regDate = re.compile(r"^([\d]{4}).\s?([\d]{2}).\s?([\d]{2}).?")
-
+    
     # Number Reg
     regNum = re.compile(r"([A-z]*[\d]?)[\-|\_|\s]{1,2}([\d]{3}[-|_|\s]?[\d]{3,4}[-|_|\s]?([\d]{4}))")
 
+    # 이름 / 번호 / POC [ group(1) = 이름, group(2) = 번호, group(3) = 번호 뒷자리, group(4) = POC ]
+    regNewform0203 = re.compile(r"(\D*)\s/\s([\d]{3}[-|_|\s]?[\d]{3,4}[-|_|\s]?([\d]{4}))/s/\s(\D*)")
+
+    # 000-0000-0000 (일반 형식 전화번호 모두 찾기)
     regPhonenum = re.compile(r"([\d]{3}[-|_|\s]?[\d]{3,4}[-|_|\s]?([\d]{4}))")
 
     # Name Reg
@@ -68,6 +72,7 @@ if __name__ == "__main__":
         resultName = regName.search(line)
         resultNum = regNum.search(line)
         resultPhoneNum = regPhonenum.search(line)
+        resultNewform0203 = regNewform0203.search(line)
         resultDate = regDate.search(line)
         
         # 새로운 이름 찾았을 시 이름 갱신
@@ -108,6 +113,28 @@ if __name__ == "__main__":
                 c.name += "_" + resultNum.group(3)
 
             contactDict[c.mdn] = c
+
+        # 210203 이름 / 번호 / POC
+        elif resultNewform0203:
+            c.mdn = resultNewform0203.group(2)
+            c.poc = resultNewform0203.group(4)
+
+            # remove "-, space" in number
+            c.mdn = re.sub(pattern=r"[\-|\s]", repl='', string=c.mdn)
+            
+            # Duplication Check (add Time Check)
+            dup:contact = contactDict.get(c.mdn)
+            if dup:
+                if (type(dup) is contact):
+                    dup.duplication.append(dup.time + ' ' + dup.name)
+                    c = dup
+                    # print("%s 중복" %dup.name)
+            
+            c.name = name + "_" + resultNewform0203.group(3)
+            c.time = date + time
+
+            contactDict[c.mdn] = c
+
         
         # 기존 양식과 다를 경우 폰 번호 형식만 서칭 (000-0000-0000, 000-000-0000)
         elif resultPhoneNum:
