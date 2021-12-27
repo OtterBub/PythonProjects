@@ -1,6 +1,6 @@
 ADBTool for MultiDevices and More Easy
 TEST ENC Park SungKyoung 
-20211013 Update
+20211227 Update
 
 파일 요약
 [ ADBCapturePacket.exe - 패킷 캡쳐 명령어 실행 ]
@@ -63,8 +63,6 @@ RECORDING LOG: 로그 기록중
 - 그냥 실행시 apk 선택창 노출
 - 끌어다 놓아도 실행 가능
 - apk 기본 실행 파일로 해당 실행파일 지정하면 매우 편함
-
-[ ADBUninstallMeetUs.exe - MeetUs Android App 삭제기 ]
 
 [ Appium.exe - Run Appium Test For MeetUs ]
 
