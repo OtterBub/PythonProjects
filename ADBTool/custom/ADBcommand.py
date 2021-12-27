@@ -12,34 +12,46 @@ from typing import Any, Callable, List, Mapping, Optional, Tuple, Iterable
 
 import traceback
 
-#CONST
-#ADB MODULE VERSION
-VERSION = '0.211013.3'
+# CONST VAL
+# ADB MODULE VERSION
+# (Major).(BuildDate).(Minor)
+VERSION = '0.211227.1'
 
-#INSTALL STATUS
+# Patch History
+# 211227
+# shell get prop command 중 한글 포함 시 디바이스 정보 못 불러오는 문제 해결
+#
+# 211013
+# Patch History 파이썬 파일에 기록 시작
+# Add Display Font Color
+#
+
+# INSTALL STATUS
 IDLE = 0
 RUNCOMMAND = 1
 COMPLITE = 2
 KEYINTERRUPT = 3
 ERROR = 4
 
-#ADB NAME
+# ADB NAME
 ADB = "adb"
 
+# Debug for Nox(VM) ADB
 if os.path.isfile(os.path.dirname(sys.argv[0]) + "/nox.txt"):
     print("Active nox_adb")
     sleep(1)
     ADB = "nox_adb"
 
 
-#Reg
+# Reg
 getModelReg = re.compile(r"model]:\s\[([\S]*)\]")
 getOSVersionReg = re.compile(r"version.release]:\s\[([\S]*)\]")
 getBuildTypeReg = re.compile(r"build.type]:\s\[([\S]*)\]")
 getBuildTagsReg = re.compile(r"build.tags]:\s\[([\S]*)\]")
 getPhoneNumReg = re.compile(r"8?[2|0]0?1[8|7|0|1][\d]*")
 
-#GLOBAL
+# GLOBAL
+# Display Result for Print
 gPrintResult = ""
 
 
@@ -149,10 +161,11 @@ def getDeviceInfo(origDict:dict() = None):
                 #android getprop
                 try:
                     setcmd = (r'%s -s %s shell getprop' %(ADB, udid))
-                    getModelCmd = subprocess.check_output(setcmd, text=True)
+                    getModelCmd = subprocess.check_output(setcmd, text=True, encoding='UTF8')
                 except subprocess.CalledProcessError:
-                    print("[%s] shell getprop Command Failed" %(udid))
+                    print("[%s] subprocess.CalledProcessError" %(udid))
                 except :
+                    traceback.print_exc()
                     print("[%s] shell getprop Command Failed" %(udid))
                     
                     d = device()
